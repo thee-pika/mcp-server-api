@@ -8,7 +8,6 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import z from "zod";
 
-// Create the server
 const server = new Server({
   name: "cocktail-api-server",
   version: "1.0.0"
@@ -18,12 +17,10 @@ const server = new Server({
   }
 });
 
-// Define tool schema using zod
 const getCocktailSchema = z.object({
   name: z.string().describe("Cocktail name to search for")
 });
 
-// Register tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -45,9 +42,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Helper function to format a cocktail recipe nicely
 function formatCocktail(drink: any) {
-  // Create an array of ingredients paired with measurements
   const ingredients = [];
   for (let i = 1; i <= 15; i++) {
     const ingredient = drink[`strIngredient${i}`];
@@ -73,14 +68,12 @@ ${drink.strInstructions}
   `.trim();
 }
 
-// Implement the tool handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === "get_cocktail") {
     try {
-      // Parse and validate arguments using zod
+
       const args = getCocktailSchema.parse(request.params.arguments);
 
-      // Make the API call to CocktailDB
       const url = `
        https://www.thecocktaildb.com/api/json/v1/1/search.php?
        s=${encodeURIComponent(args.name)}
@@ -93,7 +86,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       const data = await response.json();
 
-      // Check if any drinks were found
       if (!data.drinks) {
         return {
           content: [
@@ -105,10 +97,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      // Format each cocktail recipe
       const cocktailRecipes = data.drinks.map(formatCocktail);
 
-      // Create the formatted response
+
       const result = `
         Found ${data.drinks.length} cocktail(s) matching 
         "${args.name}":\n\n${cocktailRecipes.join('\n\n')}
@@ -137,7 +128,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   }
 
-  // Handle unknown tool
+
   return {
     isError: true,
     content: [
@@ -149,11 +140,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   };
 });
 
-// Connect the transport
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Cocktail API server running on stdio");
+  console.log("Cocktail API server running on stdio");
 }
 
 main().catch(err => {
